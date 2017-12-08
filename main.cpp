@@ -1,23 +1,25 @@
+#include "stdafx.h"
 #include <iostream>
 #include "SerialPort.h"
 #include <stdio.h>
 #include <string.h>
+#include <sstream>
+#include <assert.h>
 
 using namespace std;
 
-char* portName = "\\\\.\\COM20";
+char* portName = "\\\\.\\COM3";
 
 #define MAX_DATA_LENGTH 255
 
 char incomingData[MAX_DATA_LENGTH];
 
 //Control signals for turning on and turning off the led
-//Check arduino code
+//Check relay12v code
 char ledON[] = "ON\n";
 char ledOFF[] = "OFF\n";
 
-//Arduino SerialPort object
-SerialPort *arduino;
+SerialPort *relay12v;
 
 //Blinking Delay
 const unsigned int BLINKING_DELAY = 1000;
@@ -27,31 +29,58 @@ const unsigned int BLINKING_DELAY = 1000;
 
 void exampleReceiveData(void)
 {
-    int readResult = arduino->readSerialPort(incomingData, MAX_DATA_LENGTH);
+    int readResult = relay12v->ReadSerialPort(incomingData, MAX_DATA_LENGTH);
     printf("%s", incomingData);
     Sleep(10);
 }
 
 void exampleWriteData(unsigned int delayTime)
 {
-    arduino->writeSerialPort(ledON, MAX_DATA_LENGTH);
+    relay12v->WriteSerialPort(ledON, MAX_DATA_LENGTH);
     Sleep(delayTime);
-    arduino->writeSerialPort(ledOFF, MAX_DATA_LENGTH);
+    relay12v->WriteSerialPort(ledOFF, MAX_DATA_LENGTH);
     Sleep(delayTime);
 }
 
+
+void Test12vUsb()
+{
+    const std::string myPort = "\\\\.\\COM3";
+    SerialPort usb12v(myPort, SerialPort::DefaultParameter());
+    int ret = usb12v.Open();
+    if (ret != 0)
+    {
+        std::cout << "open failed. Error code:" << ret << std::endl;
+        return;
+    }
+    std::string hex_close_3_cmd = "240106010101010130";//0x24,0x01,0x06...
+    std::string hex_open_all_cmd = "240106010202020234";
+    std::string byte_open_all_cmd = SerialPort::ConvertHexStrToChar(hex_open_all_cmd);
+    std::string byte_close_3_cmd = SerialPort::ConvertHexStrToChar(hex_close_3_cmd);
+    usb12v.WriteSerialPort(const_cast<char*>(byte_open_all_cmd.c_str()), MAX_DATA_LENGTH);
+    Sleep(1000);
+    usb12v.WriteSerialPort(const_cast<char*>(byte_close_3_cmd.c_str()), MAX_DATA_LENGTH);
+    Sleep(1000);
+    usb12v.Close();
+}
 int main()
 {
-    arduino = new SerialPort(portName);
-
-    //Checking if arduino is connected or not
-    if (arduino->isConnected()){
-        std::cout << "Connection established at port " << portName << endl;
-    }
-
-    #ifdef SEND
-        while(arduino->isConnected()) exampleWriteData(BLINKING_DELAY);
-    #else // SEND
-        while(arduino->isConnected()) exampleReceiveData();
-    #endif // SEND
+    Test12vUsb();
+    //old codes
+//    if(0)
+//    {
+//        const std::string myPort = "\\\\.\\COM3";
+//        relay12v = new SerialPort(myPort.c_str());
+//
+//        //Checking if relay12v is connected or not
+//        if (relay12v->IsConnected()) {
+//            std::cout << "Connection established at port " << portName << endl;
+//        }
+//
+//#ifdef SEND
+//        while (relay12v->IsConnected()) exampleWriteData(BLINKING_DELAY);
+//#else // SEND
+//        while (relay12v->IsConnected()) exampleReceiveData();
+//#endif // SEND
+//    }
 }
