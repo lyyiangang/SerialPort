@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sstream>
 #include <assert.h>
+#include <vector>
 
 using namespace std;
 
@@ -45,7 +46,7 @@ void exampleWriteData(unsigned int delayTime)
 
 void Test12vUsb()
 {
-    const std::string myPort = "\\\\.\\COM3";
+    const std::string myPort = "\\\\.\\COM4";
     SerialPort usb12v(myPort, SerialPort::DefaultParameter());
     int ret = usb12v.Open();
     if (ret != 0)
@@ -53,13 +54,13 @@ void Test12vUsb()
         std::cout << "open failed. Error code:" << ret << std::endl;
         return;
     }
-    std::string hex_close_3_cmd = "240106010101010130";//0x24,0x01,0x06...
-    std::string hex_open_all_cmd = "240106010202020234";
+    std::string hex_open_all_cmd = "00f1ff";
+    std::string hex_close_3_cmd = "0001ff";//0x24,0x01,0x06...
     std::string byte_open_all_cmd = SerialPort::ConvertHexStrToChar(hex_open_all_cmd);
     std::string byte_close_3_cmd = SerialPort::ConvertHexStrToChar(hex_close_3_cmd);
-    usb12v.WriteSerialPort(const_cast<char*>(byte_open_all_cmd.c_str()), MAX_DATA_LENGTH);
+    usb12v.WriteSerialPort(const_cast<char*>(byte_open_all_cmd.c_str()), byte_open_all_cmd.size());
     Sleep(1000);
-    usb12v.WriteSerialPort(const_cast<char*>(byte_close_3_cmd.c_str()), MAX_DATA_LENGTH);
+    usb12v.WriteSerialPort(const_cast<char*>(byte_close_3_cmd.c_str()),byte_close_3_cmd.size());
     Sleep(1000);
     usb12v.Close();
 }
